@@ -19,6 +19,16 @@ export interface VfdVPhysicalInputs {
   readonly forwardCommand: boolean;
   /** REV digital input energized (24V to DCM). */
   readonly reverseCommand: boolean;
+  /**
+   * Virtual digital-keypad forward command. The physical VFD-V has a
+   * local keypad; the core terminal profile simulates it as a virtual
+   * input so "Digital keypad" can be selected as a command source.
+   */
+  readonly keypadForward: boolean;
+  /** Virtual digital-keypad reverse command. */
+  readonly keypadReverse: boolean;
+  /** Virtual digital-keypad frequency setpoint, Hz. */
+  readonly keypadFrequency: number;
   /** AVI voltage with respect to ACM, volts (0..10). */
   readonly aviVoltage: number;
   /**
@@ -85,6 +95,11 @@ export interface VfdVRuntimeState {
   /** Externally applied load, % of rated torque. */
   readonly loadPercent: number;
 
+  /** Input phase-loss warning latched by 06-02 response (soft status). */
+  readonly phaseLossWarning: boolean;
+  /** Over-torque detection active (06-08 response "continue" only). */
+  readonly overTorqueDetected: boolean;
+
   /** Motor temperature estimate, °C. */
   readonly motorTemperature: number;
   /** Drive heatsink temperature estimate, °C. */
@@ -126,6 +141,8 @@ export function createInitialVfdVState(): VfdVRuntimeState {
     forwardCommand: false,
     reverseCommand: false,
     direction: 0,
+    phaseLossWarning: false,
+    overTorqueDetected: false,
     frequencyCommand: 0,
     targetFrequency: 0,
     outputFrequency: 0,
@@ -162,6 +179,9 @@ export function createDefaultVfdVInputs(): VfdVPhysicalInputs {
     phaseT: false,
     forwardCommand: false,
     reverseCommand: false,
+    keypadForward: false,
+    keypadReverse: false,
+    keypadFrequency: 0,
     aviVoltage: 0,
     externalFault: false
   };

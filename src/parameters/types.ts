@@ -2,9 +2,19 @@
  * EVC v1.0 parameter schema types.
  *
  * Every parameter definition in this project is expressed as a
- * `ParameterDefinition` record, loaded from the authoritative EVC file
- * (VFD-V_EVC_v1.0_core_parameters.evc). The runtime engine must read
- * values through the `ParameterRegistry` — never from duplicated copies.
+ * `ParameterDefinition` record. The VFD-V schema lives in
+ * `src/devices/vfd-v/schema/`; the runtime engine must read values
+ * through the `ParameterRegistry` — never from duplicated copies.
+ *
+ * NULL VALUES (source gaps):
+ *   `default`, `min`, `max`, `step` may be `null` when the value is not
+ *   established by the available source material (see
+ *   `src/devices/vfd-v/schema/provenance.ts`). Semantics:
+ *     - null default -> the registry initializes the value to 0
+ *     - null min/max -> unbounded on that side for validation
+ *     - null step    -> no step alignment check
+ *   Engine-bound parameters must NOT be null (the engine validates this
+ *   at construction time and fails loudly with the gap list).
  */
 
 /** Datatypes used by the EVC v1.0 schema. */
@@ -43,19 +53,22 @@ export interface ParameterEnumOption {
 export interface ParameterDefinition {
   /** Parameter address, e.g. "01-00". */
   readonly id: string;
-  /** Human-readable parameter name from the EVC file. */
+  /** Official Delta parameter name (do not rename). */
   readonly name: string;
   readonly datatype: ParameterDatatype;
   /** Engineering unit (Hz, s, %, V, A ...). Absent for unitless parameters. */
   readonly unit: string | undefined;
-  /** Factory default value. */
-  readonly default: number;
-  readonly min: number;
-  readonly max: number;
-  readonly step: number;
+  /** Factory default value; null = source gap (see provenance). */
+  readonly default: number | null;
+  /** Minimum value; null = not established. */
+  readonly min: number | null;
+  /** Maximum value; null = not established. */
+  readonly max: number | null;
+  /** Step increment; null = not established. */
+  readonly step: number | null;
   /** Allowed values for ENUM parameters. Absent for numeric parameters. */
   readonly enum: readonly ParameterEnumOption[] | undefined;
-  /** Runtime effect description from the EVC file (documentation, not logic). */
+  /** Runtime effect description (documentation, not logic). */
   readonly runtimeEffect: string | undefined;
   readonly access: ParameterAccess;
 }

@@ -131,7 +131,7 @@ describe("ParameterRegistry", () => {
     reg.load(testSchema());
     const tooHigh = reg.set("01-00", 400.5);
     expect(tooHigh.ok).toBe(false);
-    expect(tooHigh.ok === false ? tooHigh.reason : "").toMatch(/out of range/);
+    expect(tooHigh.ok === false ? tooHigh.reason : "").toMatch(/above max/);
     const tooLow = reg.set("01-00", 0.9);
     expect(tooLow.ok).toBe(false);
     // Previous value must survive a rejected write.

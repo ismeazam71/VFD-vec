@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FaultHistory, type FaultRecord } from "../../src/simulation/faults/FaultHistory.js";
 import { FaultManager } from "../../src/simulation/faults/FaultManager.js";
-import { FaultCodes } from "../../src/simulation/faults/FaultCodes.js";
+import { FaultCodes } from "../../src/devices/vfd-v/faultCodes.js";
 
 function record(code: string, t: number): FaultRecord {
   return { code, description: `desc-${code}`, simulationTime: t };

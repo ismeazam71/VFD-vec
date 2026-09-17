@@ -1,6 +1,6 @@
 import type { FaultRecord } from "./FaultHistory.js";
 import { FaultHistory } from "./FaultHistory.js";
-import { FaultSeverity, getFaultCode } from "./FaultCodes.js";
+import { FaultSeverity, getFaultCode } from "../../devices/vfd-v/faultCodes.js";
 
 /**
  * Central fault manager for one drive instance.

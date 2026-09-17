@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { VFD_V_CORE_TERMINALS, getVfdVTerminal } from "../../src/terminals/vfdVTerminals.js";
+import { VFD_V_CORE_TERMINALS, getVfdVTerminal } from "../../src/devices/vfd-v/terminals.js";
 
 /**
  * The core hardware profile must expose exactly these 18 terminals and

@@ -23,12 +23,12 @@ function isStepAligned(value: number, step: number, origin: number): boolean {
  * Checks, in order:
  *   1. value is a finite number
  *   2. integer datatypes reject fractional values
- *   3. min/max range
- *   4. step alignment (relative to the factory default)
+ *   3. min/max range (null bound = unbounded on that side)
+ *   4. step alignment relative to the factory default (null default/step
+ *      = no alignment check)
  *   5. enum membership for ENUM parameters
  *
- * Pure function — no state, deterministic, safe to call from tests and
- * from the parameter registry.
+ * Pure function — deterministic, used by the registry and by tests.
  */
 export function validateParameterValue(
   definition: ParameterDefinition,
@@ -38,18 +38,20 @@ export function validateParameterValue(
     return { ok: false, reason: `value must be a finite number, got ${String(value)}` };
   }
   if (isIntegerDatatype(definition.datatype) && !Number.isInteger(value)) {
-    return {
-      ok: false,
-      reason: `${definition.id}: ${definition.datatype} requires an integer value`
-    };
+    return { ok: false, reason: `${definition.id}: ${definition.datatype} requires an integer value` };
   }
-  if (value < definition.min - TOLERANCE || value > definition.max + TOLERANCE) {
-    return {
-      ok: false,
-      reason: `${definition.id}: value ${value} out of range [${definition.min}, ${definition.max}]`
-    };
+  if (definition.min !== null && value < definition.min - TOLERANCE) {
+    return { ok: false, reason: `${definition.id}: value ${value} below min ${definition.min}` };
   }
-  if (!isStepAligned(value, definition.step, definition.default)) {
+  if (definition.max !== null && value > definition.max + TOLERANCE) {
+    return { ok: false, reason: `${definition.id}: value ${value} above max ${definition.max}` };
+  }
+  if (
+    definition.step !== null &&
+    definition.step > 0 &&
+    definition.default !== null &&
+    !isStepAligned(value, definition.step, definition.default)
+  ) {
     return {
       ok: false,
       reason: `${definition.id}: value ${value} not aligned to step ${definition.step}`

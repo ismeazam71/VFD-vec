@@ -1,4 +1,4 @@
-import { TerminalType, type TerminalDefinition } from "./types.js";
+import { TerminalType, type TerminalDefinition } from "../../terminals/types.js";
 
 /**
  * VFD-V core hardware profile: the ONLY terminals exposed on the

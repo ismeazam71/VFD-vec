@@ -153,6 +153,26 @@ plus determinism (bit-identical reruns) and dt-invariance of the
 frequency pipeline. Unit suites cover the parameter registry, state
 machine, fault manager, and terminal model.
 
+## Live demo (browser, real-time)
+
+`demo/` is a dependency-free real-time HMI page that runs the built
+engine at 60 fps with **real-clock dt** (requestAnimationFrame host
+loop, dt clamped to the engine's stable 0.001–0.100 s range):
+
+```bash
+npm run build          # emits dist/ (ESM)
+python3 -m http.server 8000 --bind 0.0.0.0   # from the repo root
+# open http://localhost:8000/demo/
+```
+
+It is intentionally plain HTML/CSS/JS (no framework) — it demonstrates
+the exact integration pattern for an online simulator: one
+`engine.update(dt, inputs)` per animation frame, terminals/keypad/AVI
+supplied from the UI each tick, phase-loss, momentary FWD/REV buttons,
+runtime load, live parameter changes, fault inject/reset, relay lamps,
+fault history, and rolling frequency/bus charts. The integration
+comments at the top of `demo/app.js` are the embedding guide.
+
 ## Scripts
 
 | Command | Purpose |

@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VFD-V Live Simulation — Delta VFD-V 7.5 kW</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="logo">VFD-V</span>
+      <div>
+        <h1>Live Simulation — Delta VFD-V 10HP (7.5 kW)</h1>
+        <p class="sub">Deterministic runtime engine · real-clock dt (requestAnimationFrame) · <span id="simClock">t = 0.00 s</span> · dt = <span id="dtRead">—</span></p>
+      </div>
+    </div>
+    <div class="state-row">
+      <div id="stateBadge" class="state POWER_OFF">POWER_OFF</div>
+      <div id="faultBanner" class="fault-banner hidden"></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ======================= CONTROL PANEL ======================= -->
+    <section class="panel controls">
+      <h2>Power (R / S / T)</h2>
+      <div class="phase-row">
+        <button id="phaseR" class="phase on">R/L1</button>
+        <button id="phaseS" class="phase on">S/L2</button>
+        <button id="phaseT" class="phase on">T/L3</button>
+        <span class="hint">drop a phase → phase-loss / Lv</span>
+      </div>
+
+      <h2>Operation (2-wire, momentary)</h2>
+      <div class="btn-row">
+        <button id="fwdBtn" class="cmd fwd">FWD ▲</button>
+        <button id="revBtn" class="cmd rev">REV ▼</button>
+      </div>
+      <p class="hint">press = start (latched) · press again = stop · REV while running = stop (no auto-reverse)</p>
+
+      <h2>Frequency command</h2>
+      <label class="field">
+        <span>Source (00-20)</span>
+        <select id="freqSource">
+          <option value="0">0 — RS-485</option>
+          <option value="1">1 — AVI (0-10 V)</option>
+          <option value="2" selected>2 — Keypad</option>
+        </select>
+      </label>
+      <label class="field" id="keypadField">
+        <span>Keypad setpoint — <b id="keypadVal">60.0</b> Hz</span>
+        <input id="keypadHz" type="range" min="0" max="60" step="0.5" value="60" />
+      </label>
+      <label class="field hidden" id="aviField">
+        <span>AVI voltage — <b id="aviVal">0.0</b> V</span>
+        <input id="aviV" type="range" min="0" max="10" step="0.1" value="0" />
+      </label>
+
+      <h2>External load</h2>
+      <label class="field">
+        <span>Load torque — <b id="loadVal">0</b> % of rated</span>
+        <input id="loadPct" type="range" min="0" max="200" step="5" value="0" />
+      </label>
+
+      <h2>Fault &amp; reset</h2>
+      <div class="btn-row">
+        <button id="extFaultBtn" class="cmd small">External fault (PF)</button>
+        <button id="resetBtn" class="cmd small">Reset fault</button>
+        <button id="ackBtn" class="cmd small">Acknowledge</button>
+      </div>
+
+      <details class="params">
+        <summary>Parameters (live)</summary>
+        <label class="field"><span>01-12 Accel time (s)</span><input id="pAccel" type="number" min="0.1" max="60" step="0.1" value="5" /></label>
+        <label class="field"><span>01-13 Decel time (s)</span><input id="pDecel" type="number" min="0.1" max="60" step="0.1" value="5" /></label>
+        <label class="field">
+          <span>00-22 Stop method</span>
+          <select id="pStop"><option value="0" selected>0 — Ramp</option><option value="1">1 — Coast</option></select>
+        </label>
+        <label class="field">
+          <span>00-23 Reverse operation</span>
+          <select id="pRev"><option value="0" selected>0 — Disabled</option><option value="1">1 — Enabled</option></select>
+        </label>
+        <label class="field"><span>06-01 OV trip (% of nominal, 0=off)</span><input id="pOv" type="number" min="0" max="200" step="1" value="0" /></label>
+        <label class="field"><span>06-00 Lv trip (% of nominal, 0=off)</span><input id="pLv" type="number" min="0" max="110" step="1" value="0" /></label>
+        <label class="field"><span>06-06 oL2 level (% of rated, 0=off)</span><input id="pOl2" type="number" min="0" max="200" step="1" value="0" /></label>
+        <label class="field"><span>06-07 oL2 time (s)</span><input id="pOl2t" type="number" min="0.1" max="20" step="0.1" value="1" /></label>
+      </details>
+    </section>
+
+    <!-- ======================= HMI READOUT ======================= -->
+    <section class="panel hmi">
+      <div class="big-grid">
+        <div class="big">
+          <label>Output frequency</label>
+          <div class="value"><span id="roFreq">0.0</span><small>Hz</small></div>
+          <div class="target">target <b id="roTarget">0.0</b> Hz</div>
+        </div>
+        <div class="big">
+          <label>Motor speed</label>
+          <div class="value"><span id="roSpeed">0</span><small>RPM</small></div>
+          <div class="target">slip <b id="roSlip">0</b> RPM · <b id="roDir">—</b></div>
+        </div>
+        <div class="mid">
+          <label>Current</label>
+          <div class="value"><span id="roCurr">0.0</span><small>A</small></div>
+        </div>
+        <div class="mid">
+          <label>Voltage</label>
+          <div class="value"><span id="roVolt">0</span><small>V</small></div>
+        </div>
+        <div class="mid">
+          <label>DC bus</label>
+          <div class="value"><span id="roBus">0</span><small>V</small></div>
+        </div>
+        <div class="mid">
+          <label>Motor temp</label>
+          <div class="value"><span id="roTemp">40.0</span><small>°C</small></div>
+        </div>
+        <div class="mid">
+          <label>Torque</label>
+          <div class="value"><span id="roTorque">0</span><small>%</small></div>
+        </div>
+        <div class="mid">
+          <label>Thermal heat</label>
+          <div class="value"><span id="roHeat">0</span><small>%</small></div>
+        </div>
+      </div>
+
+      <div class="charts">
+        <div class="chart-box">
+          <label>Output frequency (Hz, last 10 s)</label>
+          <canvas id="chartFreq" height="72"></canvas>
+        </div>
+        <div class="chart-box">
+          <label>DC bus voltage (V, last 10 s)</label>
+          <canvas id="chartBus" height="72"></canvas>
+        </div>
+      </div>
+
+      <div class="status-row">
+        <div class="relays">
+          <label>Relays</label>
+          <div class="lamps">
+            <span class="lamp-wrap"><i id="lampRA" class="lamp"></i>RA</span>
+            <span class="lamp-wrap"><i id="lampRB" class="lamp"></i>RB</span>
+            <span class="lamp-wrap"><i id="lampRC" class="lamp"></i>RC</span>
+          </div>
+        </div>
+        <div class="faults">
+          <label>Fault history (newest first)</label>
+          <ul id="faultList"><li class="none">— no faults —</li></ul>
+        </div>
+        <div class="misc">
+          <label>Run time</label>
+          <div><b id="roRunTime">0.0</b> s · load <b id="roLoad">0</b> %</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    vfd-vec engine · deterministic · 16-step/tick pipeline · see <code>docs/PROVENANCE.md</code> for model assumptions
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
